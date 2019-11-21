@@ -901,5 +901,5 @@ struct i2c_driver rt1015_i2c_driver = {
 module_i2c_driver(rt1015_i2c_driver);
 
 MODULE_DESCRIPTION("ASoC RT1015 driver");
-MODULE_AUTHOR("Oder Chiou <oder_chiou@realtek.com>");
+MODULE_AUTHOR("Jack Yu <jack.yu@realtek.com>");
 MODULE_LICENSE("GPL v2");
