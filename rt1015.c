@@ -810,8 +810,44 @@ struct snd_soc_dai_driver rt1015_dai[] = {
 	}
 };
 
+static int rt1015_remove(struct snd_soc_codec *codec)
+{
+	struct rt1015_priv *rt1015 = snd_soc_codec_get_drvdata(codec);
+
+	regmap_write(rt1015->regmap, RT1015_RESET, 0);
+	return 0;
+}
+
+#ifdef CONFIG_PM
+static int rt1015_suspend(struct snd_soc_codec *codec)
+{
+	struct rt1015_priv *rt1015 = snd_soc_codec_get_drvdata(codec);
+
+	regcache_cache_only(rt1015->regmap, true);
+	regcache_mark_dirty(rt1015->regmap);
+	pr_err("[DBG] %s\n",__func__);
+	return 0;
+}
+
+static int rt1015_resume(struct snd_soc_codec *codec)
+{
+	struct rt1015_priv *rt1015 = snd_soc_codec_get_drvdata(codec);
+
+	regcache_cache_only(rt1015->regmap, false);
+	regcache_sync(rt1015->regmap);
+	pr_err("[DBG] %s\n",__func__);
+	return 0;
+}
+#else
+#define rt1015_suspend NULL
+#define rt1015_resume NULL
+#endif
+
 static struct snd_soc_codec_driver soc_codec_dev_rt1015 = {
 	.probe = rt1015_probe,
+	.remove = rt1015_remove,
+	.suspend = rt1015_suspend,
+	.resume = rt1015_resume,
 	.idle_bias_off = true,
 	.component_driver = {
 		.controls		= rt1015_snd_controls,
