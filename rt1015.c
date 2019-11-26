@@ -571,6 +571,7 @@ static int rt1015_hw_params(struct snd_pcm_substream *substream,
 
 	rt1015->lrck = params_rate(params);
 	pre_div = rl6231_get_clk_info(rt1015->sysclk, rt1015->lrck);
+
 	if (pre_div < 0) {
 		dev_err(codec->dev, "Unsupported clock setting\n");
 		return -EINVAL;
@@ -606,8 +607,10 @@ static int rt1015_hw_params(struct snd_pcm_substream *substream,
 		return -EINVAL;
 	}
 
-	snd_soc_update_bits(codec, RT1015_TDM_MASTER, RT1015_I2S_DL_MASK, val_len);
-	snd_soc_update_bits(codec, RT1015_CLK2, RT1015_FS_PD_MASK, pre_div);
+	snd_soc_update_bits(codec, RT1015_TDM_MASTER, RT1015_I2S_DL_MASK,
+		val_len);
+	snd_soc_update_bits(codec, RT1015_CLK2, RT1015_FS_PD_MASK,
+		pre_div << RT1015_FS_PD_SFT);
 
 	return 0;
 }
@@ -753,8 +756,8 @@ static int rt1015_set_dai_pll(struct snd_soc_dai *dai, int pll_id, int source,
 		(pll_code.m_bp ? 0 : pll_code.m_code) << RT1015_PLL_M_SFT |
 		pll_code.m_bp << RT1015_PLL_M_BP_SFT |
 		pll_code.n_code << RT1015_PLL_N_SFT);
-	snd_soc_update_bits(codec, RT1015_PLL2, RT1015_PLL_K_MASK,
-		pll_code.k_code);
+	snd_soc_update_bits(codec, RT1015_PLL2, RT1015_PLL_K_MASK |
+		RT1015_PLL_BPK_MASK, pll_code.k_code | RT1015_PLL_BPK);
 
 	rt1015->pll_in = freq_in;
 	rt1015->pll_out = freq_out;
@@ -807,6 +810,7 @@ struct snd_soc_dai_driver rt1015_dai[] = {
 			.rates = RT1015_STEREO_RATES,
 			.formats = RT1015_FORMATS,
 		},
+		.ops = &rt1015_aif_dai_ops,
 	}
 };
 
@@ -825,7 +829,7 @@ static int rt1015_suspend(struct snd_soc_codec *codec)
 
 	regcache_cache_only(rt1015->regmap, true);
 	regcache_mark_dirty(rt1015->regmap);
-	pr_err("[DBG] %s\n",__func__);
+
 	return 0;
 }
 
@@ -835,7 +839,7 @@ static int rt1015_resume(struct snd_soc_codec *codec)
 
 	regcache_cache_only(rt1015->regmap, false);
 	regcache_sync(rt1015->regmap);
-	pr_err("[DBG] %s\n",__func__);
+
 	return 0;
 }
 #else
@@ -884,6 +888,14 @@ static const struct of_device_id rt1015_of_match[] = {
 };
 MODULE_DEVICE_TABLE(of, rt1015_of_match);
 
+#ifdef CONFIG_ACPI
+static const struct acpi_device_id rt1015_acpi_match[] = {
+	{ "10EC1015", 0},
+	{ },
+};
+MODULE_DEVICE_TABLE(acpi, rt1015_acpi_match);
+#endif
+
 static int rt1015_i2c_probe(struct i2c_client *i2c,
 	const struct i2c_device_id *id)
 {
@@ -927,6 +939,9 @@ static int rt1015_i2c_remove(struct i2c_client *i2c)
 struct i2c_driver rt1015_i2c_driver = {
 	.driver = {
 		.name = "rt1015",
+#ifdef CONFIG_ACPI
+		.acpi_match_table = ACPI_PTR(rt1015_acpi_match),
+#endif
 		.of_match_table = of_match_ptr(rt1015_of_match),
 	},
 	.probe = rt1015_i2c_probe,

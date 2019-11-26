@@ -187,6 +187,8 @@
 #define RT1015_PLL_N_SFT			0
 
 /* 0x000c */
+#define RT1015_PLL_BPK_MASK			(0x1 << 5)
+#define RT1015_PLL_BPK				(0x0 << 5)
 #define RT1015_PLL_K_MAX			0x1f
 #define RT1015_PLL_K_MASK			(RT1015_PLL_K_MAX)
 #define RT1015_PLL_K_SFT			0
