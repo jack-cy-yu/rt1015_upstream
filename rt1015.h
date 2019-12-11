@@ -343,7 +343,7 @@ enum {
 };
 
 struct rt1015_priv {
-	struct snd_soc_codec *codec;
+	struct snd_soc_component *component;
 	struct regmap *regmap;
 	int sysclk;
 	int sysclk_src;
